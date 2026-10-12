@@ -1,0 +1,46 @@
+name: Generare APK PAD
+
+on:
+  workflow_dispatch:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Preia fisierele
+        uses: actions/checkout@v4
+
+      - name: Instaleaza Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Pregateste Android
+        uses: android-actions/setup-android@v3
+
+      - name: Pregateste Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Dezarhiveaza proiectul
+        run: |
+          ZIP=$(find . -maxdepth 1 -name 'PAD_Android_*.zip' -print -quit)
+          test -n "$ZIP"
+          unzip -q "$ZIP"
+          test -f PAD_Android_Project/app/build.gradle.kts
+
+      - name: Genereaza APK
+        run: gradle -p PAD_Android_Project :app:assembleDebug --no-daemon
+
+      - name: Salveaza APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PAD-Proces-Verbal-APK
+          path: PAD_Android_Project/app/build/outputs/apk/debug/*.apk
